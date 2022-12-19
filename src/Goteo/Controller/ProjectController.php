@@ -25,6 +25,7 @@ use Goteo\Library\Text;
 use Goteo\Library\Worth;
 use Goteo\Model\Blog;
 use Goteo\Model\Blog\Post as BlogPost;
+use Goteo\Model\Footprint;
 use Goteo\Model\Invest;
 use Goteo\Model\License;
 use Goteo\Model\Message as SupportMessage;
@@ -38,6 +39,7 @@ use Goteo\Model\Project\ProjectMilestone;
 use Goteo\Model\SocialCommitment;
 use Spipu\Html2Pdf\Exception\Html2PdfException;
 use Spipu\Html2Pdf\Html2Pdf;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -345,16 +347,20 @@ class ProjectController extends Controller {
      * A user unmark a project as favourite
      * TODO: to microAPI
      */
-    public function deleteFavouriteAction(Request $request) {
-        if ($request->isMethod('post')) {
-            $project = $request->request->get('project');
-            $user = $request->request->get('user');
+    public function deleteFavouriteAction(Request $request): JsonResponse
+    {
+        if ($request->isMethod(Request::METHOD_POST)) {
+            $obj = json_decode($request->getContent());
+            $project = $obj->project;
+            $user = $obj->user;
 
-            $favourite=new Favourite(array(
+            $favourite = new Favourite([
                 'project' => $project, 'user' => $user
-            ));
+            ]);
 
-            $favourite->remove($errors);
+            $errors = [];
+            if (!$favourite->remove($errors))
+                return $this->jsonResponse(['result' => implode(',',$errors)]);
         }
 
         return $this->jsonResponse(['result' => true]);
@@ -376,5 +382,12 @@ class ProjectController extends Controller {
             Message::error($e->getMessage());
             return new RedirectResponse('/project/' . $project->id );
         }
+    }
+
+    public function impactAction(Request $request, string $pid = null): Response
+    {
+        $footprints = Footprint::getList([], 0, 3);
+
+        return $this->viewResponse('project/impact_calculator/impact_calculator', ['footprints' => $footprints]);
     }
 }

@@ -10,13 +10,15 @@
 
 namespace Goteo\Model;
 
+use Goteo\Application\Exception\ModelNotFoundException;
+use Goteo\Application\Lang;
 use Goteo\Core\Model;
-use Goteo\Model\Image;
 use Goteo\Library\Text;
 
-use Goteo\Application\Exception\ModelNotFoundException;
-
 class ImpactData extends Model {
+
+    const GLOBAL = "global";
+    const PROJECT = "project";
 
 	public
 		$id,
@@ -27,25 +29,33 @@ class ImpactData extends Model {
 		$image,
 		$lang;
 
+    public string $type = self::GLOBAL;
+
     protected $Table = 'impact_data';
 	static protected $Table_static = 'impact_data';
 
-    public static function getLangFields() {
+    public static function getLangFields(): array
+    {
         return ['title', 'data', 'data_unit', 'description'];
     }
 
-    public static function get($id) {
-
+    /**
+     * @throws ModelNotFoundException
+     */
+    public static function get($id): ImpactData
+    {
+        $lang = Lang::current();
         list($fields, $joins) = self::getLangsSQLJoins($lang);
 
         $sql = "SELECT
-                    id,
+                    impact_data.id,
                     $fields,
-                    image,
-                    lang
+                    impact_data.image,
+                    impact_data.lang,
+                    impact_data.type
                 FROM impact_data
                 $joins
-                WHERE id = :id";
+                WHERE impact_data.id = :id";
 
         $impact_data = static::query($sql, [':id' => $id])->fetchObject(__CLASS__);
 
@@ -59,6 +69,7 @@ class ImpactData extends Model {
     public static function getList($filters = array(), int $offset = 0, int $limit = 10, int $count = 0) {
     	$sqlWhere = "";
 
+        $lang = Lang::current();
         list($fields, $joins) = self::getLangsSQLJoins($lang);
 
         if ($count) {
@@ -69,10 +80,11 @@ class ImpactData extends Model {
         }
 
         $sql = "SELECT
-                    id,
-                    $fields
-                    image,
-                    lang
+                    impact_data.id,
+                    $fields,
+                    impact_data.image,
+                    impact_data.lang,
+                    impact_data.type
                 FROM impact_data
                 $joins
                 $sqlWhere
@@ -80,8 +92,7 @@ class ImpactData extends Model {
             ";
 
         $query = static::query($sql);
-        $impact_data = $query->fetchAll(\PDO::FETCH_CLASS, __CLASS__);
-        return $impact_data;
+        return $query->fetchAll(\PDO::FETCH_CLASS, __CLASS__);
     }
 
 	public function getImage(): Image {
@@ -92,7 +103,8 @@ class ImpactData extends Model {
 		$this->image = $image->getName();
 	}
 
-	public function validate(&$errors = array()) {
+	public function validate(&$errors = array()): bool
+    {
 		if (!$this->title)
 			$errors['title'] = Text::get('mandatory-title');
 
@@ -108,11 +120,11 @@ class ImpactData extends Model {
 		return empty($errors);
 	}
 
-	public function save(&$errors = array()) {
-
+	public function save(&$errors = array()): bool
+    {
         if(!$this->validate($errors)) return false;
 
-		$fields = ['title','data', 'data_unit', 'description','image','lang'];
+		$fields = ['title','data', 'data_unit', 'description','image','lang', 'type'];
 
 		try {
             $this->dbInsertUpdate($fields);
@@ -122,7 +134,14 @@ class ImpactData extends Model {
         }
 
         return true;
-
 	}
+
+    public static function getTypes(): array
+    {
+        return [
+                self::GLOBAL,
+                self::PROJECT
+        ];
+    }
 }
 

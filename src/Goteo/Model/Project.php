@@ -31,6 +31,7 @@ use function array_empty;
 class Project extends Model {
 
     use Traits\SdgRelationsTrait;
+    use Traits\ImpactDataRelationsTrait;
 
     // STATUS TO BE USED TO FILTER PROJECT
     const STATUS_DRAFT = -1; // is this really necessary?
@@ -3603,6 +3604,15 @@ class Project extends Model {
      */
     public static function hideExhaustedRewards($id) {
         return ProjectConf::hideExhaustedRewards($id);
+    }
+
+    public function isImpactCalcActive():bool
+    {
+        try {
+            return ProjectConf::get($this->id)->isImpactCalcActive();
+        } catch (\Goteo\Core\Exception $e) {
+            return false;
+        }
     }
 
     /*

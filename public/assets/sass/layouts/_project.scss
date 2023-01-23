@@ -71,6 +71,7 @@ body.project {
     }
   }
 
+
   // Impact Calculator landing
   &.impact-calculator {
     background-color: $background-light-green;
@@ -106,8 +107,7 @@ body.project {
             height: 100%;
             background-color: $background-white;
             border-radius: 5rem 5rem 0 0;
-            padding: 1rem;
-            padding-top: 5rem;
+            padding: 5rem 1rem 1rem;
 
             div.impact-calculator-body-title {
               text-align: center;
@@ -146,7 +146,6 @@ body.project {
                   h3 {
                     font-weight: 700;
                     font-size: 18px;
-                    text-align: center;
                   }
 
                   p {
@@ -164,6 +163,10 @@ body.project {
                   height: 36px;
                   background: rgba(52, 93, 109, 0.1);
                   margin: auto 2rem auto auto;
+
+                  &[aria-expanded="true"] .icon.icon-arrow {
+                    transform: rotate(270deg);
+                  }
                 }
               }
             }
@@ -183,16 +186,47 @@ body.project {
     article.card {
       padding: 15px;
       width: 223px;
-      height: 315px;
-      opacity: 0.2;
-      border: 1px solid #345D6D;
+      height: 350px;
+      border: thin solid $color-light-grey;
       border-radius: 8px;
       position: relative;
       margin: 1rem;
 
+      .card-header {
+        background-color: rgba(0, 0, 0, 0.1);
+        position:absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4.5em;
+
+        h1 {
+          font-size: 16px;
+          margin-left: 1em;
+          width: 85%;
+        }
+      }
+
+      .card-body {
+        margin-top: 4em;
+      }
+
+      // Todo: Change to :has
       &.active {
         opacity: 1;
         color: white;
+
+        &.footprint-1 {
+          background: linear-gradient(324.72deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 98.42%), #FBB80B;
+        }
+
+        &.footprint-2 {
+          background: linear-gradient(324.72deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 98.42%), #D22F30;
+        }
+
+        &.footprint-3 {
+          background: linear-gradient(324.72deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 98.42%), #265688;
+        }
 
         i.icon {
           background-color: white !important;
@@ -201,18 +235,6 @@ body.project {
         input {
           background-color: unset;
         }
-      }
-
-      &.footprint-1 {
-        background: linear-gradient(324.72deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 98.42%), #FBB80B;
-      }
-
-      &.footprint-2 {
-        background: linear-gradient(324.72deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 98.42%), #D22F30;
-      }
-
-      &.footprint-3 {
-        background: linear-gradient(324.72deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 98.42%), #265688;
       }
 
       i.icon {
@@ -251,6 +273,9 @@ body.project {
         input {
           border-width: 0 0 2px 0;
           width: 165px;
+          appearance: textfield;
+          -webkit-appearance: none;
+          -moz-appearance: textfield;
 
           &:focus {
             outline: none;
@@ -277,6 +302,17 @@ body.project {
         width: 58px;
         height: 58px;
       }
+
+      .activate-impact-data {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+
+        .material-switch > label::before {
+          background: black;
+          opactity: 0;
+        }
+      }
     }
 
     .tooltip {
@@ -291,57 +327,77 @@ body.project {
     }
   }
 
+  .impact-calculator-details {
+    .slick-arrow.slick-prev {
+      left: -10px;
+    }
+
+    .slick-arrow.slick-next {
+      right: -10px;
+    }
+
+    @media(max-width: $breakpoint-xs) {
+      .slick-arrow.slick-prev {
+        left: 0;
+      }
+
+      .slick-arrow.slick-next {
+        right: 0;
+      }
+    }
+  }
+
   article.card-impact-by-footprint {
-    min-height: 220px;
     border-radius: 15px;
     color: white;
+    padding: 1rem;
 
     .row {
-      padding-top: 5px;
-      padding-left: 5px;
+      div:first-child {
+        margin-left: 1rem;
+      }
 
-      p {
-        padding-bottom: 5px;
+      &:not(:last-child) {
+        div:nth-child(2) {
+          p {
+            padding-bottom: 1rem;
+            border-bottom: 1px solid white;
+          }
+        }
       }
     }
 
     &.footprint-1 {
-      background-color: red;
+      background-color: #62AE56;
     }
 
     &.footprint-2 {
-      background-color: green;
+      background-color: #83253A;
     }
 
     &.footprint-3 {
-      background-color: blue;
+      background-color: #265688;
     }
 
-    .row:not(:last-child) p {
-      border-bottom: 1px solid white;
-    }
+    i {
+      &.icon {
+        background-color: white;
+      }
 
-    .row:last-child {
-      padding-bottom: 1rem;
-    }
+      &.icon-money-bag {
+        width: 30px;
+        height: 45px;
+      }
 
-    i.icon {
-      background-color: white;
-    }
+      &.icon-person {
+        width: 30px;
+        height: 30px;
+      }
 
-    i.icon-money-bag {
-      width: 30px;
-      height: 45px;
-    }
-
-    i.icon-person {
-      width: 30px;
-      height: 30px;
-    }
-
-    i.icon-medal {
-      width: 30px;
-      height: 40px;
+      &.icon-medal {
+        width: 30px;
+        height: 40px;
+      }
     }
   }
 
@@ -349,6 +405,7 @@ body.project {
     background-color: $background-white;
     min-height: 220px;
     border-radius: 15px;
+    padding: 10px;
 
     h3 {
       font-weight: bold;
@@ -356,16 +413,29 @@ body.project {
 
     i.icon {
       background-color: #149290;
-      width: 50px;
-      height: 50px;
+      width: 60px;
+      height: 80px;
       margin-top: 10px;
     }
 
-    button.btn {
-      background-color: transparent;
-      border: 2px solid #149290;
-      font-weight: bold;
-      color: #149290;
+    .button-modal {
+      button.btn {
+        background-color: transparent;
+        border: 2px solid #149290;
+        font-weight: bold;
+        color: #149290;
+        max-width: 100%;
+
+        &:hover {
+          background-color: #149290;
+          color: $color-white;
+        }
+      }
+
+      &.hidden-xs {
+        display: flex;
+        justify-content: center;
+      }
     }
   }
 
@@ -373,12 +443,11 @@ body.project {
     background-color: $background-white;
     min-height: 220px;
     border-radius: 15px;
-    padding-top: 10px;
+    padding: 1rem;
 
     h3 {
       font-weight: bold;
       font-size: 20px;
-      margin: 1rem;
     }
 
     .slider-sdgs {
@@ -387,6 +456,123 @@ body.project {
 
     img {
       width: 9rem;
+    }
+  }
+
+  /* Modal for impact calculator */
+
+  #impact-calculator-modal {
+    .modal-dialog .modal-content {
+      background-color: $background-light-green;
+      color: $color-white;
+
+      .modal-header {
+        border-bottom: none;
+        padding: 30px;
+
+        button.close {
+          color: $color-white;
+        }
+
+        label {
+          font-size: 24px;
+          font-weight: normal;
+        }
+
+        .modal-input {
+          i.icon-money-bag {
+            background-color: white;
+            height: 45px;
+          }
+
+          input {
+            border-width: 0 0 1px 0;
+            width: 85%;
+            background-color: unset;
+            margin-bottom: 1rem;
+            font-size: 24px;
+
+            &:focus {
+              outline: none;
+            }
+          }
+
+          button.icon-arrow {
+            position: absolute;
+            right: 15%;
+            transform: rotate(180deg);
+            background-color: $color-white;
+          }
+        }
+      }
+
+      .modal-body {
+        background-color: $background-white;
+        border-radius: 5rem 5rem 0 0;
+        padding: 30px;
+
+        i {
+          background-color: $color-dark-green;
+        }
+
+        h3 {
+          color: $color-black;
+        }
+
+        h4 {
+          color: $color-light-green;
+          font-weight: bold;
+        }
+
+        h5, p {
+          color: $color-new-dark-blue;
+          font-weight: bold;
+        }
+
+        .detail {
+          display: relative;
+
+          &:after {
+            content: '';
+            height: 80%;
+            width: 1px;
+
+            position: absolute;
+            right: 0;
+            top: 10%;
+
+            background-color: $color-light-grey;
+          }
+
+          p {
+            color: $color-new-dark-blue;
+            font-weight: bold;
+            font-size: 24px;
+          }
+        }
+
+        .impact {
+          h4 {
+            color: $color-new-dark-blue;
+          }
+
+          p {
+            font-size: 16px;
+          }
+        }
+      }
+
+      .modal-footer {
+        background-color: $background-white;
+        text-align: left;
+        border-top: none;
+        padding: 0 30px 30px 30px;
+
+        h2 {
+          color: $color-light-green;
+          font-weight: bold;
+        }
+      }
     }
   }
 
@@ -416,8 +602,6 @@ body.project {
       overflow: hidden;
     }
   }
-
-  background: $color-white;
 
   @media (max-width: $breakpoint-sm - 1) {
     padding-bottom: 57px;

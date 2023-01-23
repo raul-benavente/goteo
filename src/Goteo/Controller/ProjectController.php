@@ -21,11 +21,13 @@ use Goteo\Application\View;
 use Goteo\Controller\Dashboard\ProjectDashboardController;
 use Goteo\Core\Controller;
 use Goteo\Core\DB;
+use Goteo\Entity\ImpactData\ImpactDataProject;
 use Goteo\Library\Text;
 use Goteo\Library\Worth;
 use Goteo\Model\Blog;
 use Goteo\Model\Blog\Post as BlogPost;
 use Goteo\Model\Footprint;
+use Goteo\Model\ImpactData;
 use Goteo\Model\Invest;
 use Goteo\Model\License;
 use Goteo\Model\Message as SupportMessage;
@@ -37,6 +39,7 @@ use Goteo\Model\Project\Favourite;
 use Goteo\Model\Project\ProjectLocation;
 use Goteo\Model\Project\ProjectMilestone;
 use Goteo\Model\SocialCommitment;
+use Goteo\Repository\ImpactDataProjectRepository;
 use Spipu\Html2Pdf\Exception\Html2PdfException;
 use Spipu\Html2Pdf\Html2Pdf;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -69,7 +72,7 @@ class ProjectController extends Controller {
             return $this->redirect('/user/login?return='.urldecode('/project/create'));
         }
 
-        if ($request->isMethod('post')) {
+        if ($request->isMethod(Request::METHOD_POST)) {
 
         	$social_commitment= strip_tags($request->request->get('social'));
 
@@ -121,14 +124,14 @@ class ProjectController extends Controller {
             $response = $this->dispatch(AppEvents::PROJECT_CREATED, new FilterProjectEvent($project))->getResponse();
             if($response instanceOf Response) return $response;
 
-            return new RedirectResponse('/dashboard/project/' . $project->id . '/profile');
+            return new RedirectResponse("/project/$project->id/impact-calculator");
         }
 
         return $this->viewResponse( 'project/create', [
            'social_commitments' => SocialCommitment::getAll(),
            'terms' => Page::get('howto')
         ]);
-	}
+    }
 
 	protected function view(Request $request, $project, $show, $post = null) {
 		DB::cache(true);
@@ -180,14 +183,27 @@ class ProjectController extends Controller {
                 Config::set('analytics.google', array_merge(Config::get('analytics.google'), [$project->analytics_id]));
             }
 
-            $viewData = array(
+            $footprints = Footprint::getList([], 0, 3);
+
+            $viewData = [
                 'project' => $project,
                 'show' => $show,
                 'blog' => null,
                 'related_projects' => $related_projects,
-                'widget_code' => $widget_code
-            );
+                'widget_code' => $widget_code,
+                'footprints' => $footprints
+            ];
 
+            $impactDataProjectRepository = new ImpactDataProjectRepository();
+            $impactDataProjectByFootprint = [];
+            foreach($footprints as $footprint) {
+                $impactDataProjectByFootprint[$footprint->id] = $impactDataProjectRepository->getListByProjectAndFootprint($project, $footprint);
+            }
+
+            $impactDataProjectList = $impactDataProjectRepository->getListByProject($project);
+
+            $viewData['impactDataProjectByFootprint'] = $impactDataProjectByFootprint;
+            $viewData['impactDataProjectList'] = $impactDataProjectList;
             $viewData['matchers'] = $project->getMatchers('active');
             $viewData['individual_rewards'] = [];
 
@@ -337,7 +353,7 @@ class ProjectController extends Controller {
 
         $favourite->save($errors);
 
-        if ($request->isMethod('post'))
+        if ($request->isMethod(Request::METHOD_POST))
             return $this->jsonResponse(['result' => $favourite]);
 
         return $this->redirect('/project/' . $pid);
@@ -386,8 +402,56 @@ class ProjectController extends Controller {
 
     public function impactAction(Request $request, string $pid = null): Response
     {
+        if (!Session::isLogged()) {
+            Message::info(Text::get('user-login-required-to_create'));
+            return $this->redirect('/user/login?return='.urldecode("/project/$pid/impact-calculator"));
+        }
+
+        $user = Session::getUser();
+        $project = Project::get($pid);
+
+        if (!$user->id == $project->user) {
+            return $this->redirect('/');
+        }
+
         $footprints = Footprint::getList([], 0, 3);
 
-        return $this->viewResponse('project/impact_calculator/impact_calculator', ['footprints' => $footprints]);
+        if ($request->isMethod(Request::METHOD_POST)) {
+            $this->createImpactDataProjects($request, $project);
+            return new RedirectResponse('/dashboard/project/' . $project->id . '/profile');
+        }
+
+        return $this->viewResponse('project/impact_calculator/impact_calculator', ['footprints' => $footprints, 'project' => $project]);
+    }
+
+    private function createImpactDataProjects(Request $request, Project $project)
+    {
+        $data = $request->request->all();
+        foreach ($data['form'] as $impactDataList) {
+            foreach ($impactDataList as $impactData => $impactDataProjectData) {
+                $impactData = ImpactData::get($impactData);
+
+                if ($impactDataProjectData['active']  && !empty($impactDataProjectData["data"]) && !empty($impactDataProjectData["estimated_amount"])) {
+                    $errors = [];
+                    $this->createAndPersistImpactDataProject($impactData, $project, $impactDataProjectData, $errors);
+                    if (!empty($errors)) {
+                        Message::error($errors);
+                    }
+                }
+            }
+        }
+    }
+
+    public function createAndPersistImpactDataProject(ImpactData $impactData, Project $project, array $impactDataProjectData, array $errors = []): void
+    {
+        $impactDataProject = new ImpactDataProject();
+        $impactDataProject
+            ->setImpactData($impactData)
+            ->setProject($project)
+            ->setData($impactDataProjectData["data"])
+            ->setEstimationAmount($impactDataProjectData["estimated_amount"]);
+
+        $impactDataProjectRepository = new ImpactDataProjectRepository();
+        $impactDataProjectRepository->persist($impactDataProject, $errors);
     }
 }
